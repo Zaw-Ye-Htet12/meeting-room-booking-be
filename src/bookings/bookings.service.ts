@@ -41,7 +41,6 @@ export class BookingsService {
       async (tx) => {
         const overlaps = await tx.booking.findFirst({
           where: {
-            roomName,
             AND: [{ startTime: { lt: end } }, { endTime: { gt: start } }],
           },
         });
@@ -175,7 +174,6 @@ export class BookingsService {
         const overlaps = await tx.booking.findFirst({
           where: {
             id: { not: id },
-            roomName,
             AND: [{ startTime: { lt: end } }, { endTime: { gt: start } }],
           },
         });
