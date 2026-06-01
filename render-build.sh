@@ -8,4 +8,4 @@ npm install --include=dev
 npx prisma generate
 npx prisma migrate deploy
 npm run build
-
+npx prisma db seed
