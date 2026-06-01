@@ -2,7 +2,10 @@
 # exit on error
 set -o errexit
 
-npm install
+# Install all dependencies (including devDependencies so @nestjs/cli is available)
+npm install --include=dev
+
 npx prisma generate
 npx prisma migrate deploy
 npm run build
+
