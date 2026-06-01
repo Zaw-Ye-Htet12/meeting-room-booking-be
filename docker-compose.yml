@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: meeting_room_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: meeting_room
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: meeting_room_pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@pgadmin.org
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: meeting_room_api
+    restart: always
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/meeting_room?schema=public
+      - JWT_SECRET=super-secret-jwt-key-change-in-production
+      - JWT_EXPIRES_IN=7d
+      - PORT=3001
+      - NODE_ENV=development
+      - FRONTEND_URL=http://localhost:3000
+    ports:
+      - "3002:3001"
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
