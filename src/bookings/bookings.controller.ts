@@ -1,8 +1,24 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Request,
+  Query,
+} from '@nestjs/common';
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
 import { Roles } from '../decorators/roles.decorator';
@@ -26,13 +42,18 @@ export class BookingsController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
-    return this.bookingsService.findAll(page ? parseInt(page) : undefined, limit ? parseInt(limit) : undefined);
+    return this.bookingsService.findAll(
+      page ? parseInt(page) : undefined,
+      limit ? parseInt(limit) : undefined,
+    );
   }
 
   @Get('summary')
   @UseGuards(RolesGuard)
   @Roles(Role.ADMIN, Role.OWNER)
-  @ApiOperation({ summary: 'Get booking summary grouped by user (Admin/Owner only)' })
+  @ApiOperation({
+    summary: 'Get booking summary grouped by user (Admin/Owner only)',
+  })
   getSummary() {
     return this.bookingsService.getSummary();
   }
@@ -43,10 +64,13 @@ export class BookingsController {
     return this.bookingsService.findOne(id);
   }
 
-
   @Patch(':id')
   @ApiOperation({ summary: 'Update a booking' })
-  update(@Param('id') id: string, @Body() updateBookingDto: UpdateBookingDto, @Request() req: any) {
+  update(
+    @Param('id') id: string,
+    @Body() updateBookingDto: UpdateBookingDto,
+    @Request() req: any,
+  ) {
     return this.bookingsService.update(id, updateBookingDto, req.user);
   }
 

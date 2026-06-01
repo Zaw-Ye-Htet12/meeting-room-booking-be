@@ -1,4 +1,10 @@
-import { Injectable, ConflictException, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
@@ -22,7 +28,9 @@ export class BookingsService {
     }
 
     if (start.toDateString() !== end.toDateString()) {
-      throw new BadRequestException('Booking must start and end on the same calendar day');
+      throw new BadRequestException(
+        'Booking must start and end on the same calendar day',
+      );
     }
 
     // Enforce a single room name for the system
@@ -31,15 +39,14 @@ export class BookingsService {
     const overlaps = await this.prisma.booking.findFirst({
       where: {
         roomName,
-        AND: [
-          { startTime: { lt: end } },
-          { endTime: { gt: start } }
-        ]
-      }
+        AND: [{ startTime: { lt: end } }, { endTime: { gt: start } }],
+      },
     });
 
     if (overlaps) {
-      throw new ConflictException('Booking overlaps with an existing reservation for this room');
+      throw new ConflictException(
+        'Booking overlaps with an existing reservation for this room',
+      );
     }
 
     return this.prisma.booking.create({
@@ -49,7 +56,7 @@ export class BookingsService {
         endTime: end,
         userId: userId,
       },
-      include: { user: { select: { id: true, name: true, email: true } } }
+      include: { user: { select: { id: true, name: true, email: true } } },
     });
   }
 
@@ -94,8 +101,8 @@ export class BookingsService {
     });
 
     return users
-      .filter(user => user.bookings.length > 0)
-      .map(user => ({
+      .filter((user) => user.bookings.length > 0)
+      .map((user) => ({
         userId: user.id,
         userName: user.name,
         totalBookings: user.bookings.length,
@@ -106,28 +113,35 @@ export class BookingsService {
   async findOne(id: string) {
     const booking = await this.prisma.booking.findUnique({
       where: { id },
-      include: { user: { select: { id: true, name: true, email: true } } }
+      include: { user: { select: { id: true, name: true, email: true } } },
     });
-    
+
     if (!booking) throw new NotFoundException('Booking not found');
     return booking;
   }
 
   private checkModifyPermission(booking: any, user: any) {
-    if (booking.userId !== user.id && user.role !== Role.ADMIN && user.role !== Role.OWNER) {
-      throw new ForbiddenException('You are not allowed to modify this booking');
+    if (
+      booking.userId !== user.id &&
+      user.role !== Role.ADMIN &&
+      user.role !== Role.OWNER
+    ) {
+      throw new ForbiddenException(
+        'You are not allowed to modify this booking',
+      );
     }
   }
 
   async update(id: string, updateBookingDto: UpdateBookingDto, user: any) {
     const booking = await this.findOne(id);
     this.checkModifyPermission(booking, user);
-    
+
     let start = booking.startTime;
     let end = booking.endTime;
     const roomName = 'Main Meeting Room'; // Enforce single room
-    
-    if (updateBookingDto.startTime) start = new Date(updateBookingDto.startTime);
+
+    if (updateBookingDto.startTime)
+      start = new Date(updateBookingDto.startTime);
     if (updateBookingDto.endTime) end = new Date(updateBookingDto.endTime);
 
     if (start >= end) {
@@ -141,7 +155,9 @@ export class BookingsService {
     }
 
     if (start.toDateString() !== end.toDateString()) {
-      throw new BadRequestException('Booking must start and end on the same calendar day');
+      throw new BadRequestException(
+        'Booking must start and end on the same calendar day',
+      );
     }
 
     // Check overlaps excluding current booking
@@ -149,15 +165,14 @@ export class BookingsService {
       where: {
         id: { not: id },
         roomName,
-        AND: [
-          { startTime: { lt: end } },
-          { endTime: { gt: start } }
-        ]
-      }
+        AND: [{ startTime: { lt: end } }, { endTime: { gt: start } }],
+      },
     });
 
     if (overlaps) {
-      throw new ConflictException('Updated booking overlaps with an existing reservation');
+      throw new ConflictException(
+        'Updated booking overlaps with an existing reservation',
+      );
     }
 
     return this.prisma.booking.update({
@@ -165,9 +180,9 @@ export class BookingsService {
       data: {
         roomName,
         startTime: start,
-        endTime: end
+        endTime: end,
       },
-      include: { user: { select: { id: true, name: true, email: true } } }
+      include: { user: { select: { id: true, name: true, email: true } } },
     });
   }
 
@@ -178,4 +193,3 @@ export class BookingsService {
     return { message: 'Booking cancelled successfully' };
   }
 }
-

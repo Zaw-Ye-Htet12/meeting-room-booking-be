@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
@@ -10,10 +14,15 @@ import { Role } from '@prisma/client';
 export class AuthService {
   constructor(
     private prisma: PrismaService,
-    private jwtService: JwtService
+    private jwtService: JwtService,
   ) { }
 
-  private async getTokens(userId: string, email: string, role: string, name: string) {
+  private async getTokens(
+    userId: string,
+    email: string,
+    role: string,
+    name: string,
+  ) {
     const payload = { sub: userId, email, role, name };
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
@@ -57,7 +66,12 @@ export class AuthService {
       },
     });
 
-    const tokens = await this.getTokens(user.id, user.email, user.role, user.name);
+    const tokens = await this.getTokens(
+      user.id,
+      user.email,
+      user.role,
+      user.name,
+    );
     return {
       ...tokens,
       user: {
@@ -78,12 +92,20 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
+    const isPasswordValid = await bcrypt.compare(
+      loginDto.password,
+      user.password,
+    );
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const tokens = await this.getTokens(user.id, user.email, user.role, user.name);
+    const tokens = await this.getTokens(
+      user.id,
+      user.email,
+      user.role,
+      user.name,
+    );
     return {
       ...tokens,
       user: {
@@ -117,12 +139,20 @@ export class AuthService {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
-      const isTokenMatching = await bcrypt.compare(refreshToken, user.refreshToken);
+      const isTokenMatching = await bcrypt.compare(
+        refreshToken,
+        user.refreshToken,
+      );
       if (!isTokenMatching) {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
-      const tokens = await this.getTokens(user.id, user.email, user.role, user.name);
+      const tokens = await this.getTokens(
+        user.id,
+        user.email,
+        user.role,
+        user.name,
+      );
       return {
         ...tokens,
         user: {
@@ -137,5 +167,3 @@ export class AuthService {
     }
   }
 }
-
-

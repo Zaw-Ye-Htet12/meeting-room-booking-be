@@ -1,9 +1,23 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Get, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  Get,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
-import { ApiTags, ApiResponse, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiResponse,
+  ApiOperation,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
 @ApiTags('auth')
@@ -41,7 +55,9 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @Post('refresh')
-  @ApiOperation({ summary: 'Refresh access and refresh tokens using a valid refresh token' })
+  @ApiOperation({
+    summary: 'Refresh access and refresh tokens using a valid refresh token',
+  })
   @ApiResponse({ status: 200, description: 'Successful token rotation' })
   @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })
   refresh(@Body() refreshTokenDto: RefreshTokenDto) {
@@ -58,5 +74,3 @@ export class AuthController {
     return req.user;
   }
 }
-
-
