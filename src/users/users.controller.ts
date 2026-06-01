@@ -7,11 +7,13 @@ import {
   Param,
   Delete,
   UseGuards,
+  Request,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
@@ -56,6 +58,14 @@ export class UsersController {
   @ApiOperation({ summary: 'Get a single user by ID (Admin only)' })
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Patch('profile')
+  @ApiOperation({ summary: 'Update own user profile' })
+  updateProfile(@Request() req: any, @Body() updateProfileDto: UpdateProfileDto) {
+    return this.usersService.update(req.user.id, updateProfileDto);
   }
 
   @ApiBearerAuth()

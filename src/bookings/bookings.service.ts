@@ -33,31 +33,39 @@ export class BookingsService {
       );
     }
 
-    // Enforce a single room name for the system
-    const roomName = 'Main Meeting Room';
+    const roomName = createBookingDto.roomName;
 
-    const overlaps = await this.prisma.booking.findFirst({
-      where: {
-        roomName,
-        AND: [{ startTime: { lt: end } }, { endTime: { gt: start } }],
+    // Use a serializable transaction to prevent race conditions (NFR-4)
+    // Two simultaneous requests cannot both pass the overlap check
+    return this.prisma.$transaction(
+      async (tx) => {
+        const overlaps = await tx.booking.findFirst({
+          where: {
+            roomName,
+            AND: [{ startTime: { lt: end } }, { endTime: { gt: start } }],
+          },
+        });
+
+        if (overlaps) {
+          throw new ConflictException(
+            'Booking overlaps with an existing reservation for this room',
+          );
+        }
+
+        return tx.booking.create({
+          data: {
+            roomName,
+            startTime: start,
+            endTime: end,
+            userId: userId,
+          },
+          include: {
+            user: { select: { id: true, name: true, email: true } },
+          },
+        });
       },
-    });
-
-    if (overlaps) {
-      throw new ConflictException(
-        'Booking overlaps with an existing reservation for this room',
-      );
-    }
-
-    return this.prisma.booking.create({
-      data: {
-        roomName,
-        startTime: start,
-        endTime: end,
-        userId: userId,
-      },
-      include: { user: { select: { id: true, name: true, email: true } } },
-    });
+      { isolationLevel: 'Serializable' },
+    );
   }
 
   async findAll(page: number = 1, limit: number = 10) {
@@ -138,11 +146,12 @@ export class BookingsService {
 
     let start = booking.startTime;
     let end = booking.endTime;
-    const roomName = 'Main Meeting Room'; // Enforce single room
+    let roomName = booking.roomName;
 
     if (updateBookingDto.startTime)
       start = new Date(updateBookingDto.startTime);
     if (updateBookingDto.endTime) end = new Date(updateBookingDto.endTime);
+    if (updateBookingDto.roomName) roomName = updateBookingDto.roomName;
 
     if (start >= end) {
       throw new BadRequestException('Start time must be before end time');
@@ -160,30 +169,37 @@ export class BookingsService {
       );
     }
 
-    // Check overlaps excluding current booking
-    const overlaps = await this.prisma.booking.findFirst({
-      where: {
-        id: { not: id },
-        roomName,
-        AND: [{ startTime: { lt: end } }, { endTime: { gt: start } }],
-      },
-    });
+    // Use a serializable transaction to prevent race conditions (NFR-4)
+    return this.prisma.$transaction(
+      async (tx) => {
+        const overlaps = await tx.booking.findFirst({
+          where: {
+            id: { not: id },
+            roomName,
+            AND: [{ startTime: { lt: end } }, { endTime: { gt: start } }],
+          },
+        });
 
-    if (overlaps) {
-      throw new ConflictException(
-        'Updated booking overlaps with an existing reservation',
-      );
-    }
+        if (overlaps) {
+          throw new ConflictException(
+            'Updated booking overlaps with an existing reservation',
+          );
+        }
 
-    return this.prisma.booking.update({
-      where: { id },
-      data: {
-        roomName,
-        startTime: start,
-        endTime: end,
+        return tx.booking.update({
+          where: { id },
+          data: {
+            roomName,
+            startTime: start,
+            endTime: end,
+          },
+          include: {
+            user: { select: { id: true, name: true, email: true } },
+          },
+        });
       },
-      include: { user: { select: { id: true, name: true, email: true } } },
-    });
+      { isolationLevel: 'Serializable' },
+    );
   }
 
   async remove(id: string, user: any) {
